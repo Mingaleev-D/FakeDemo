@@ -3,7 +3,7 @@ package com.example.fakedemo.ui.epoxyController
 import androidx.lifecycle.viewModelScope
 import com.airbnb.epoxy.TypedEpoxyController
 import com.example.fakedemo.model.uiProduct.UiProduct
-import com.example.fakedemo.ui.viewmodel.MainViewModel
+import com.example.fakedemo.ui.viewmodel.ProductsListViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
  */
 
 class UiProductEpoxyController(
-   private val viewModel: MainViewModel
+   private val viewModel: ProductsListViewModel
 ) : TypedEpoxyController<List<UiProduct>>() {
    override fun buildModels(data: List<UiProduct>?) {
       if (data.isNullOrEmpty()) {

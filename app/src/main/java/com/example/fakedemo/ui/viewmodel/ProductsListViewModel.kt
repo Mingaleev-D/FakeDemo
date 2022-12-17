@@ -15,7 +15,7 @@ import javax.inject.Inject
  */
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class ProductsListViewModel @Inject constructor(
    private val productsRepository: ProductsRepository,
    val store: Store<ApplicationState>
 ) : ViewModel() {
