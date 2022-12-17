@@ -10,4 +10,9 @@
         android:name="com.example.fakedemo.ui.fragments.ProductsListFragment"
         android:label="Products list"
         tools:layout="@layout/fragment_products_list" />
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.fakedemo.ui.fragments.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
 </navigation>
