@@ -3,6 +3,7 @@ package com.example.fakedemo.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fakedemo.data.repository.ProductsRepository
+import com.example.fakedemo.model.domain.Filter
 import com.example.fakedemo.redux.ApplicationState
 import com.example.fakedemo.redux.Store
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +26,13 @@ class ProductsListViewModel @Inject constructor(
       val products = productsRepository.fetchAllProducts()
       store.update { applicationState ->
          return@update applicationState.copy(
-            products = products
+            products = products,
+            productFilterInfo = ApplicationState.ProductFilterInfo(
+               filters = products.map {
+                  Filter(value = it.category, displayText = it.category)
+               }.toSet(),
+               selectedFilter = null
+            )
          )
       }
 
