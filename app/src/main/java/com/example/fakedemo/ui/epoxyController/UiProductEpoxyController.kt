@@ -1,9 +1,12 @@
 package com.example.fakedemo.ui.epoxyController
 
 import androidx.lifecycle.viewModelScope
+import com.airbnb.epoxy.CarouselModel_
 import com.airbnb.epoxy.TypedEpoxyController
+import com.example.fakedemo.model.ProductsListFragmentUiState
+import com.example.fakedemo.model.domain.Filter
 import com.example.fakedemo.model.uiProduct.UiProduct
-import com.example.fakedemo.ui.viewmodel.MainViewModel
+import com.example.fakedemo.ui.viewmodel.ProductsListViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -12,23 +15,35 @@ import kotlinx.coroutines.launch
  */
 
 class UiProductEpoxyController(
-   private val viewModel: MainViewModel
-) : TypedEpoxyController<List<UiProduct>>() {
-   override fun buildModels(data: List<UiProduct>?) {
-      if (data.isNullOrEmpty()) {
+   private val viewModel: ProductsListViewModel
+) : TypedEpoxyController<ProductsListFragmentUiState>() {
+
+   override fun buildModels(data: ProductsListFragmentUiState?) {
+      if (data == null) {
          repeat(7) {
             val epoxyId = it + 1
             UiProductEpoxyModel(
                uiProduct = null,
-               onFavoriteIconClicked = ::onFavoriteIconClicked
+               onFavoriteIconClicked = ::onFavoriteIconClicked,
+               onUiProductClicked = ::onUiProductClicked
             ).id(epoxyId).addTo(this)
          }
          return
       }
-      data.forEach { uiProduct ->
+
+      val uiFilterModels = data.filters.map { iuFilter ->
+         UiProductFilterEpoxyModel(
+            uiFilter = iuFilter,
+            onFilterSelected = ::onFilterSelected
+         ).id(iuFilter.filter.value)
+      }
+      CarouselModel_().models(uiFilterModels).id("filters").addTo(this)
+
+      data.products.forEach { uiProduct ->
          UiProductEpoxyModel(
             uiProduct = uiProduct,
-            onFavoriteIconClicked = ::onFavoriteIconClicked
+            onFavoriteIconClicked = ::onFavoriteIconClicked,
+            onUiProductClicked = ::onUiProductClicked
          ).id(uiProduct.product.id).addTo(this)
       }
    }
@@ -43,6 +58,36 @@ class UiProductEpoxyController(
                currentFavoriteIds + setOf(selectedProductId)
             }
             return@update currentState.copy(favoriteProductIds = newFavoriteIds)
+         }
+      }
+   }
+
+   private fun onUiProductClicked(productId: Int) {
+      viewModel.viewModelScope.launch {
+         viewModel.store.update { currentState ->
+            val currentExpandedIds = currentState.expandedProductIds
+            val newExpandedIds = if (currentExpandedIds.contains(productId)) {
+               currentExpandedIds.filter { it != productId }.toSet()
+            } else {
+               currentExpandedIds + setOf(productId)
+            }
+            return@update currentState.copy(expandedProductIds = newExpandedIds)
+         }
+      }
+   }
+
+   private fun onFilterSelected(filter: Filter) {
+      viewModel.viewModelScope.launch {
+         viewModel.store.update { currentState ->
+            val currentlySelectedFilter = currentState.productFilterInfo.selectedFilter
+            return@update currentState.copy(
+               productFilterInfo = currentState.productFilterInfo.copy(
+                  selectedFilter = if(currentlySelectedFilter != filter){
+                     filter
+                  }else{
+                     null
+                  }
+               ))
          }
       }
    }
