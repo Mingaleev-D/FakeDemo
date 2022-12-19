@@ -15,4 +15,9 @@
         android:name="com.example.fakedemo.ui.fragments.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile" />
+    <fragment
+        android:id="@+id/cartFragment"
+        android:name="com.example.fakedemo.ui.fragments.CartFragment"
+        android:label="Your cart"
+        tools:layout="@layout/fragment_cart" />
 </navigation>

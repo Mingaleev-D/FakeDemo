@@ -25,6 +25,7 @@
         android:id="@+id/btn_nav_view"
         app:menu="@menu/menu_bottom_nav"
         app:elevation="18dp"
+        android:layout_marginHorizontal="60dp"
         app:itemRippleColor="@color/purple_300"
         android:background="@drawable/bottom_menu_background"
         app:layout_constraintBottom_toBottomOf="parent"/>

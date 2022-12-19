@@ -40,19 +40,26 @@ class ProductsListFragment : Fragment() {
 
       val controller = UiProductEpoxyController(viewModel)
       binding.epoxyRecyclerView.setController(controller = controller)
-     // controller.setData(emptyList())
+      //controller.setData(ProductsListFragmentUiState.Loading)
 
       combine(
          viewModel.store.stateFlow.map { it.products },
          viewModel.store.stateFlow.map { it.favoriteProductIds },
          viewModel.store.stateFlow.map { it.expandedProductIds },
          viewModel.store.stateFlow.map { it.productFilterInfo },
-      ) { listOfProducts, setOfFavoriteIds, setOfExpandedProductIds, productFilterInfo ->
-        val uiProducts =  listOfProducts.map { product ->
+         viewModel.store.stateFlow.map { it.inCartProductIds }
+      ) { listOfProducts, setOfFavoriteIds, setOfExpandedProductIds, productFilterInfo, inCartProductIds ->
+
+         if (listOfProducts.isEmpty()) {
+            return@combine ProductsListFragmentUiState.Loading
+         }
+
+         val uiProducts = listOfProducts.map { product ->
             UiProduct(
                product = product,
                isFavorite = setOfFavoriteIds.contains(product.id),
-               isExpanded = setOfExpandedProductIds.contains(product.id)
+               isExpanded = setOfExpandedProductIds.contains(product.id),
+               isInCart = inCartProductIds.contains(product.id)
             )
          }
 
@@ -63,13 +70,16 @@ class ProductsListFragment : Fragment() {
             )
          }.toSet()
 
-        return@combine if(productFilterInfo.selectedFilter == null) {
-            ProductsListFragmentUiState(filters = uiFilters, products = uiProducts)
-         }else{
-            ProductsListFragmentUiState(filters = uiFilters, products = uiProducts.filter {
-               it.product.category == productFilterInfo.selectedFilter.value
-            })
-        }
+         val filteredProducts = if (productFilterInfo.selectedFilter == null) {
+            uiProducts
+         } else {
+            uiProducts.filter { it.product.category == productFilterInfo.selectedFilter.value }
+         }
+         return@combine ProductsListFragmentUiState.Success(
+            filters = uiFilters,
+            products = filteredProducts
+         )
+
 
       }.distinctUntilChanged().asLiveData().observe(viewLifecycleOwner) { uiState ->
          controller.setData(uiState)

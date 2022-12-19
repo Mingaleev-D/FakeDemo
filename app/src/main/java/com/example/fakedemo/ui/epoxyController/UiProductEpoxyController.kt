@@ -1,6 +1,7 @@
 package com.example.fakedemo.ui.epoxyController
 
 import androidx.lifecycle.viewModelScope
+import com.airbnb.epoxy.Carousel
 import com.airbnb.epoxy.CarouselModel_
 import com.airbnb.epoxy.TypedEpoxyController
 import com.example.fakedemo.model.ProductsListFragmentUiState
@@ -8,6 +9,7 @@ import com.example.fakedemo.model.domain.Filter
 import com.example.fakedemo.model.uiProduct.UiProduct
 import com.example.fakedemo.ui.viewmodel.ProductsListViewModel
 import kotlinx.coroutines.launch
+import java.util.*
 
 /**
  * @author : Mingaleev D
@@ -19,32 +21,59 @@ class UiProductEpoxyController(
 ) : TypedEpoxyController<ProductsListFragmentUiState>() {
 
    override fun buildModels(data: ProductsListFragmentUiState?) {
-      if (data == null) {
-         repeat(7) {
-            val epoxyId = it + 1
-            UiProductEpoxyModel(
-               uiProduct = null,
-               onFavoriteIconClicked = ::onFavoriteIconClicked,
-               onUiProductClicked = ::onUiProductClicked
-            ).id(epoxyId).addTo(this)
+
+      when (data) {
+         is ProductsListFragmentUiState.Success -> {
+            val uiFilterModels = data.filters.map { iuFilter ->
+               UiProductFilterEpoxyModel(
+                  uiFilter = iuFilter,
+                  onFilterSelected = ::onFilterSelected
+               ).id(iuFilter.filter.value)
+            }
+            CarouselModel_()
+               .models(uiFilterModels)
+               .id("filters")
+               .addTo(this)
+
+            data.products.forEach { uiProduct ->
+               UiProductEpoxyModel(
+                  uiProduct = uiProduct,
+                  onFavoriteIconClicked = ::onFavoriteIconClicked,
+                  onUiProductClicked = ::onUiProductClicked,
+                  onAddToCartClicked = ::onAddToCartClicked
+               ).id(uiProduct.product.id).addTo(this)
+            }
          }
-         return
+         is ProductsListFragmentUiState.Loading -> {
+            repeat(7) {
+               val epoxyId = UUID.randomUUID().toString()
+               UiProductEpoxyModel(
+                  uiProduct = null,
+                  onFavoriteIconClicked = ::onFavoriteIconClicked,
+                  onUiProductClicked = ::onUiProductClicked,
+                  onAddToCartClicked = ::onAddToCartClicked
+               ).id(epoxyId).addTo(this)
+            }
+         }
+         else                                   -> {
+            throw RuntimeException("Error $data")
+         }
       }
 
-      val uiFilterModels = data.filters.map { iuFilter ->
-         UiProductFilterEpoxyModel(
-            uiFilter = iuFilter,
-            onFilterSelected = ::onFilterSelected
-         ).id(iuFilter.filter.value)
-      }
-      CarouselModel_().models(uiFilterModels).id("filters").addTo(this)
 
-      data.products.forEach { uiProduct ->
-         UiProductEpoxyModel(
-            uiProduct = uiProduct,
-            onFavoriteIconClicked = ::onFavoriteIconClicked,
-            onUiProductClicked = ::onUiProductClicked
-         ).id(uiProduct.product.id).addTo(this)
+   }
+
+   private fun onAddToCartClicked(productId: Int) {
+      viewModel.viewModelScope.launch {
+         viewModel.store.update { currentState ->
+            val currentProductIdsInCart = currentState.inCartProductIds
+            val newProductIdsInCart = if (currentProductIdsInCart.contains(productId)) {
+               currentProductIdsInCart.filter { it != productId }.toSet()
+            } else {
+               currentProductIdsInCart + setOf(productId)
+            }
+            return@update currentState.copy(inCartProductIds = newProductIdsInCart)
+         }
       }
    }
 
@@ -82,12 +111,13 @@ class UiProductEpoxyController(
             val currentlySelectedFilter = currentState.productFilterInfo.selectedFilter
             return@update currentState.copy(
                productFilterInfo = currentState.productFilterInfo.copy(
-                  selectedFilter = if(currentlySelectedFilter != filter){
+                  selectedFilter = if (currentlySelectedFilter != filter) {
                      filter
-                  }else{
+                  } else {
                      null
                   }
-               ))
+               )
+            )
          }
       }
    }
