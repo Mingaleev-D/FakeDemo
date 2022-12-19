@@ -6,6 +6,7 @@ import com.example.fakedemo.data.repository.ProductsRepository
 import com.example.fakedemo.model.domain.Filter
 import com.example.fakedemo.redux.ApplicationState
 import com.example.fakedemo.redux.Store
+import com.example.fakedemo.ui.FilterGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,19 +19,19 @@ import javax.inject.Inject
 @HiltViewModel
 class ProductsListViewModel @Inject constructor(
    private val productsRepository: ProductsRepository,
-   val store: Store<ApplicationState>
+   val store: Store<ApplicationState>,
+   private val filterGenerator: FilterGenerator
 ) : ViewModel() {
 
 
    fun refreshProducts() = viewModelScope.launch {
       val products = productsRepository.fetchAllProducts()
+      val filters: Set<Filter> = filterGenerator.generateFrom(products)
       store.update { applicationState ->
          return@update applicationState.copy(
             products = products,
             productFilterInfo = ApplicationState.ProductFilterInfo(
-               filters = products.map {
-                  Filter(value = it.category, displayText = it.category)
-               }.toSet(),
+               filters = filters,
                selectedFilter = null
             )
          )
